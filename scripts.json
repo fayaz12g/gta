@@ -1,20 +1,29 @@
 [
     {
         "dialogue": [
-            {"speaker": "Person 1", "text": "Hello, how are you today?"},
-            {"speaker": "Person 2", "text": "I'm doing well, thank you!"},
+            {"speaker": "Person 2", "text": "Hello, how are you today?"},
+            {"speaker": "Person 1", "text": "ADLIB"},
             {"speaker": "Person 3", "text": "What are your plans for the weekend?"},
-            {"speaker": "Person 1", "text": "I might go hiking."},
-            {"speaker": "Person 2", "text": "That sounds fun!"},
-            {"speaker": "Adlibber", "text": "Adlib"}
+            {"speaker": "Person 1", "text": "ADLIB"},
+            {"speaker": "Person 2", "text": "That sounds fun!"}
+        ]
+    },
+    {
+        "dialogue": [
+            {"speaker": "Person 1", "text": "ADLIB"},
+            {"speaker": "Person 3", "text": "Why would you say that?"},
+            {"speaker": "Person 1", "text": "ADLIB"},
+            {"speaker": "Person 1", "text": "ADLIB"},
+            {"speaker": "Person 2", "text": "That's a little racist...'"},
+            {"speaker": "Person 1", "text": "ADLIB"}
         ]
     },
     {
         "dialogue": [
             {"speaker": "Person 3", "text": "Did you watch the game last night?"},
-            {"speaker": "Person 1", "text": "Yes, it was so exciting!"},
+            {"speaker": "Person 1", "text": "ADLIB"},
             {"speaker": "Person 2", "text": "I couldn't believe the final score."},
-            {"speaker": "Adlibber", "text": "Adlib"},
+            {"speaker": "Person 1", "text": "ADLIB"},
             {"speaker": "Person 3", "text": "I'm still in shock."}
         ]
     }

@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Multiplayer Game</title>
+    <title>Guess the Adlibber Game</title>
 </head>
 <body>
-    <h1>Multiplayer Game</h1>
+    <h1>Guess the Adlibber Game</h1>
     <div id="setup">
         <label for="role">Are you a player or host?</label>
         <select id="role">
@@ -63,39 +63,26 @@
             if (role === 'host') {
                 document.getElementById('player-setup').style.display = 'none';
                 document.getElementById('host-setup').style.display = 'block';
-                document.getElementById('host-ip').textContent = 'your-pc-ip-address';
-                socket = new WebSocket(`ws://0.0.0.0:8765`);
-
-                socket.addEventListener('open', function () {
-                    socket.send(JSON.stringify({ type: 'join', role: 'host', sessionId: sessionId }));
-                    document.getElementById('setup').style.display = 'none';
-                    document.getElementById('game').style.display = 'block';
-                });
-
-            } else {
-                if (!ipAddress || !playerName) {
-                    alert('Please enter a valid IP address and your name.');
-                    return;
-                }
-
-                const wsUrl = `ws://${ipAddress}:8765`;
-                socket = new WebSocket(wsUrl);
-
-                socket.addEventListener('open', function () {
-                    socket.send(JSON.stringify({ type: 'join', role: 'player', sessionId: sessionId, name: playerName }));
-                    document.getElementById('setup').style.display = 'none';
-                    document.getElementById('game').style.display = 'block';
-                });
+                document.getElementById('host-ip').textContent = window.location.hostname;
             }
+
+            socket = new WebSocket(`ws://${ipAddress}:8765`);
+
+            socket.addEventListener('open', function () {
+                socket.send(JSON.stringify({
+                    type: 'join',
+                    role: role,
+                    name: playerName,
+                    sessionId: sessionId
+                }));
+            });
 
             socket.addEventListener('message', function (event) {
                 const data = JSON.parse(event.data);
                 if (data.type === 'update_players') {
                     updatePlayerList(data.players);
-                } else if (data.type === 'start_game') {
-                    showGameScreen(data.team, data.script, data.name, data.round);
                 } else if (data.type === 'start_round') {
-                    startRound(data.team, data.script, data.name, data.round);
+                    startRound(data.role, data.script, data.name, data.round);
                 } else if (data.type === 'update_leaderboard') {
                     updateLeaderboard(data.leaderboard);
                 } else if (data.type === 'end_game') {
@@ -134,27 +121,31 @@
             socket.send(JSON.stringify({ type: 'start_game', sessionId: sessionId, total_rounds: totalRounds }));
         }
 
-        function showGameScreen(team, script, name, round) {
+        function startRound(role, script, name, round) {
             document.getElementById('game').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
-            document.getElementById('team-display').textContent = `You are on ${team}`;
+            document.getElementById('team-display').textContent = `You are ${role}`;
             document.getElementById('round').textContent = `Round ${round}`;
             document.getElementById('name').textContent = name;
             currentScript = script;
             currentLine = 0;
-            if (team === 'Person 1' || team === 'Person 2' || team === 'Person 3') {
+            if (role === 'Person 1' || role === 'Person 2' || role === 'Person 3') {
                 document.getElementById('dialogue').style.display = 'block';
                 document.getElementById('next-button').style.display = 'block';
-                showNextLine();
-            } else {
+                showNextLine(role);
+            } else if (role === 'guesser') {
                 document.getElementById('guess').style.display = 'block';
                 createGuessButtons();
             }
         }
 
-        function showNextLine() {
+        function showNextLine(role) {
             const line = currentScript.dialogue[currentLine];
-            document.getElementById('dialogue-text').textContent = line.text;
+            if (role === 'Person 1' && line.speaker === 'Person 1') {
+                document.getElementById('dialogue-text').textContent = 'ADLIB';
+            } else {
+                document.getElementById('dialogue-text').textContent = line.text;
+            }
             currentLine++;
             if (currentLine >= currentScript.dialogue.length) {
                 document.getElementById('next-button').style.display = 'none';
@@ -180,7 +171,7 @@
                 sessionId: sessionId,
                 guesser: document.getElementById('name').textContent,
                 guess: person,
-                adlibber: Object.keys(playerRoles).find(name => playerRoles[name] === 'Adlibber')
+                adlibber: Object.keys(playerRoles).find(name => playerRoles[name] === 'Person 1')
             }));
         }
 

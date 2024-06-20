@@ -66,14 +66,14 @@ async def start_round(session_id):
 
     players = session['players']
     random.shuffle(players)
-    roles = ['Person 1', 'Person 2', 'Person 3', 'Adlibber']
+    roles = ['Person 1', 'Person 2', 'Person 3', 'Guesser']
     for player, role in zip(players, roles):
         player['role'] = role
 
     script = random.choice(session['scripts'])
 
     for player in players:
-        if player['role'] == 'Adlibber':
+        if player['role'] == 'Guesser':
             await player['websocket'].send(json.dumps({
                 'type': 'start_round',
                 'role': 'guesser',
