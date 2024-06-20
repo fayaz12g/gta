@@ -66,9 +66,9 @@
     
         function connect() {
             const role = document.getElementById('role').value;
-            const ipAddress = document.getElementById('ip-address').value;
+            const ipAddress = document.getElementById('ip-address').value; // Ensure ipAddress is declared here
             const playerName = document.getElementById('player-name').value;
-    
+
             if (role === 'host') {
                 document.getElementById('player-setup').style.display = 'none';
                 document.getElementById('host-setup').style.display = 'block';
@@ -80,9 +80,9 @@
                 document.getElementById('player-name-display').textContent = `Player: ${playerName}`; // Display player's name
                 document.getElementById('session-id-display').textContent = `Session ID: ${sessionId}`; // Display session ID
             }
-    
+
             socket = new WebSocket(`ws://${ipAddress}:8765`);
-    
+
             socket.addEventListener('open', function () {
                 socket.send(JSON.stringify({
                     type: 'join',
@@ -91,13 +91,13 @@
                     sessionId: sessionId
                 }));
             });
-    
+
             socket.addEventListener('message', function (event) {
                 const data = JSON.parse(event.data);
                 if (data.type === 'update_players') {
                     updatePlayerList(data.players);
                 } else if (data.type === 'start_round') {
-                    startRound(data.role, data.script_id, data.name, data.round); // Use script_id
+                    startRound(data.role, data.script_id, data.name, data.round, data.ipAddress); // Pass ipAddress from server
                 } else if (data.type === 'update_leaderboard') {
                     updateLeaderboard(data.leaderboard);
                 } else if (data.type === 'end_game') {
@@ -105,15 +105,15 @@
                 }
             });
 
-    
             socket.addEventListener('error', function () {
                 alert('Failed to connect. Please check the IP address and try again.');
             });
-    
+
             socket.addEventListener('close', function () {
                 alert('Connection closed.');
             });
         }
+
     
         function updatePlayerList(players) {
             const playerList = document.getElementById('player-list');
@@ -147,20 +147,21 @@
             roundDisplay.textContent = `Round ${round}`;
         }
     
-        function startRound(role, scriptId, name, round) {
+        function startRound(role, scriptId, name, round, ipAddress) {
             document.getElementById('game').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
             document.getElementById('team-display').textContent = `You are ${role}`;
             updateRoundDisplay(round); // Display round number
             document.getElementById('name-display').textContent = name; // Ensure 'name-display' is correct
-            console.log('Name:', name);
-            let nameDisplayElement = document.getElementById('name-display');
-            console.log('Name Display Element:', nameDisplayElement);
 
-
-            // Fetch script data based on scriptId
-            fetch(`/api/scripts/${scriptId}`)
-                .then(response => response.json())
+            // Fetch script data based on scriptId and ipAddress
+            fetch(`http://${ipAddress}:8765/api/scripts/${scriptId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch script');
+                    }
+                    return response.json();
+                })
                 .then(script => {
                     currentScript = script;
                     currentLine = 0;
@@ -183,6 +184,7 @@
                     alert('Failed to fetch script data. Please try again.');
                 });
         }
+
 
 
 

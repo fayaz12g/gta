@@ -3,6 +3,7 @@ import websockets
 import json
 import random
 import os
+from aiohttp import web
 
 sessions = {}
 
@@ -65,6 +66,24 @@ async def handler(websocket, path):
                         session['leaderboard'][guesser_name] += 1
             await update_leaderboard(session_id)
             await start_round(session_id)
+
+        elif data['type'] == 'start_round':
+            script_id = data['script_id']
+            try:
+                script = next(script for script in sessions[session_id]['scripts'] if script['script_id'] == script_id)
+                await websocket.send(json.dumps({
+                    'type': 'start_round',
+                    'role': data['role'],
+                    'script_id': script['script_id'],
+                    'name': data['name'],
+                    'round': f"{session['current_round']}/{session['total_rounds']}"
+                }))
+            except StopIteration:
+                print(f"Script with ID {script_id} not found.")
+                await websocket.send(json.dumps({
+                    'type': 'error',
+                    'message': f"Script with ID {script_id} not found."
+                }))
 
 async def start_round(session_id):
     session = sessions[session_id]
