@@ -194,34 +194,27 @@
     function showNextLine(role) {
         const line = currentScript.dialogue[currentLine];
 
-        // Determine if it's the current speaker's turn
-        const isCurrentSpeaker = role === line.speaker;
-
         // Update dialogue text based on role
-        const dialogueText = isCurrentSpeaker ? line.text : 'Waiting for next line...';
-        document.getElementById('dialogue-text').textContent = dialogueText;
+        document.getElementById('dialogue-text').textContent = line.text;
 
-        // Show next button if it's the current speaker's turn and there are more lines
+        // Show next button if there are more lines to show
         const nextButton = document.getElementById('next-button');
-        nextButton.style.display = isCurrentSpeaker && currentLine < currentScript.dialogue.length - 1 ? 'block' : 'none';
+        nextButton.style.display = currentLine < currentScript.dialogue.length - 1 ? 'block' : 'none';
     }
 
     function nextLine() {
         // Move to the next line in the dialogue
         currentLine++;
 
-        // Show "Waiting for next line..." for the current speaker
-        document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
-
-        // Show next dialogue line if available
+        // Check if all dialogue lines have been shown
         if (currentLine < currentScript.dialogue.length) {
             const nextLine = currentScript.dialogue[currentLine];
             document.getElementById('dialogue-text').textContent = nextLine.text;
-            const currentRole = document.getElementById('team-display').textContent.split(' ')[2];
-            if (currentRole === nextLine.speaker) {
-                const nextButton = document.getElementById('next-button');
-                nextButton.style.display = 'block';
-            }
+        } else {
+            // If all dialogue lines are shown, transition to guess phase
+            document.getElementById('dialogue').style.display = 'none';
+            document.getElementById('guess').style.display = 'block';
+            createGuessButtons();
         }
     }
 
