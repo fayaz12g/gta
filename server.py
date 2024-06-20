@@ -3,6 +3,7 @@ import websockets
 import json
 import random
 import os
+import socket  # Import socket module for getting IP address
 from aiohttp import web
 
 sessions = {}
@@ -71,12 +72,15 @@ async def handler(websocket, path):
             script_id = data['script_id']
             try:
                 script = next(script for script in sessions[session_id]['scripts'] if script['script_id'] == script_id)
+                # Get server IP address dynamically
+                server_ip = socket.gethostbyname(socket.gethostname())
                 await websocket.send(json.dumps({
                     'type': 'start_round',
                     'role': data['role'],
                     'script_id': script['script_id'],
                     'name': data['name'],
-                    'round': f"{session['current_round']}/{session['total_rounds']}"
+                    'round': f"{sessions[session_id]['current_round']}/{sessions[session_id]['total_rounds']}",
+                    'ipAddress': server_ip  # Include the dynamically fetched IP address
                 }))
             except StopIteration:
                 print(f"Script with ID {script_id} not found.")
@@ -109,14 +113,17 @@ async def start_round(session_id):
     # Print debug information
     print(f"Chosen script ID: {script['script_id']}")  # Assuming 'scripts' is a list of dictionaries
 
-    # Send start_round message with script_id and ipAddress
+    # Get server IP address dynamically
+    server_ip = socket.gethostbyname(socket.gethostname())
+
+    # Send start_round message with script_id and dynamically fetched ipAddress
     for player in players:
         if player['role'] == 'Guesser':
             await player['websocket'].send(json.dumps({
                 'type': 'start_round',
                 'role': 'guesser',
-                'script_id': script['script_id'],  # Include script_id here
-                'ipAddress': '192.168.44.3',  # Replace with actual ipAddress or fetch from player data
+                'script_id': script['script_id'],
+                'ipAddress': server_ip,  # Include dynamically fetched IP address
                 'name': player['name'],
                 'round': f"{session['current_round']}/{total_rounds}"
             }))
@@ -125,7 +132,7 @@ async def start_round(session_id):
                 'type': 'start_round',
                 'role': player['role'],
                 'script_id': script['script_id'],
-                'ipAddress': '192.168.44.3',  # Replace with actual ipAddress or fetch from player data
+                'ipAddress': server_ip,  # Include dynamically fetched IP address
                 'name': player['name'],
                 'round': f"{session['current_round']}/{total_rounds}"
             }))
