@@ -98,6 +98,13 @@
                 updatePlayerList(data.players);
             } else if (data.type === 'start_round') {
                 startRound(data.role, data.script_id, data.name, data.round, data.ipAddress); // Pass ipAddress from server
+                const role = data.role;
+                const dialogue = data.dialogue;
+                currentScript = data.script_id;
+                currentSpeakerIndex = role === 'Person 1' ? 0 : role === 'Person 2' ? 1 : 2;
+                // Show dialogue for the respective speaker
+                document.getElementById('dialogue').style.display = 'block';
+                showNextLine(currentSpeakerIndex, dialogue);
             } else if (data.type === 'update_leaderboard') {
                 updateLeaderboard(data.leaderboard);
             } else if (data.type === 'end_game') {
@@ -191,15 +198,15 @@
             });
     }
 
-    function showNextLine(role) {
-        const line = currentScript.dialogue[currentLine];
+    function showNextLine(role, dialogue) {
+        const line = dialogue[currentLine];
 
         // Update dialogue text based on role
-        document.getElementById('dialogue-text').textContent = line.text;
+        document.getElementById('dialogue-text').textContent = line;
 
         // Show next button if there are more lines to show
         const nextButton = document.getElementById('next-button');
-        nextButton.style.display = currentLine < currentScript.dialogue.length - 1 ? 'block' : 'none';
+        nextButton.style.display = currentLine < dialogue.length - 1 ? 'block' : 'none';
     }
 
     function nextLine() {
@@ -207,9 +214,9 @@
         currentLine++;
 
         // Check if all dialogue lines have been shown
-        if (currentLine < currentScript.dialogue.length) {
-            const nextLine = currentScript.dialogue[currentLine];
-            document.getElementById('dialogue-text').textContent = nextLine.text;
+        if (currentLine < currentScript.dialogue[currentSpeakerIndex].length) {
+            const nextLine = currentScript.dialogue[currentSpeakerIndex][currentLine];
+            showNextLine(currentSpeakerIndex, nextLine);
         } else {
             // If all dialogue lines are shown, transition to guess phase
             document.getElementById('dialogue').style.display = 'none';

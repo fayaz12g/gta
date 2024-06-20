@@ -74,14 +74,34 @@ async def handler(websocket, path):
                 script = next(script for script in sessions[session_id]['scripts'] if script['script_id'] == script_id)
                 # Get server IP address dynamically
                 server_ip = socket.gethostbyname(socket.gethostname())
-                await websocket.send(json.dumps({
-                    'type': 'start_round',
-                    'role': data['role'],
-                    'script_id': script['script_id'],
-                    'name': data['name'],
-                    'round': f"{sessions[session_id]['current_round']}/{sessions[session_id]['total_rounds']}",
-                    'ipAddress': server_ip  # Include the dynamically fetched IP address
-                }))
+
+                # Assign roles and send dialogue sequentially
+                players = sessions[session_id]['players']
+                random.shuffle(players)
+                roles = ['Person 1', 'Person 2', 'Person 3']
+                player_roles = {}
+                for player, role in zip(players, roles):
+                    player['role'] = role
+                    player_roles[player['name']] = role
+
+                session['player_roles'] = player_roles
+                session['current_script'] = script
+
+                # Send start_round message to each player with their respective role and dialogue
+                for player in players:
+                    if player['role'] in ['Person 1', 'Person 2', 'Person 3']:
+                        await player['websocket'].send(json.dumps({
+                            'type': 'start_round',
+                            'role': player['role'],
+                            'script_id': script['script_id'],
+                            'ipAddress': server_ip,
+                            'dialogue': script['dialogue'][player['role']],
+                            'round': f"{session['current_round']}/{session['total_rounds']}"
+                        }))
+
+                await update_leaderboard(session_id)
+                await notify_host(session_id)
+
             except StopIteration:
                 print(f"Script with ID {script_id} not found.")
                 await websocket.send(json.dumps({
