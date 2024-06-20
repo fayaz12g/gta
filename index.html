@@ -29,9 +29,12 @@
 
     <div id="game" style="display:none;">
         <h2>Connected Players</h2>
-        <ul id="player-list"></ul>
+        <p id="player-name-display"></p> <!-- Display player's name here -->
+        <p id="session-id-display"></p> <!-- Display session ID here -->
+        <ul id="player-list"></ul> <!-- Updated list of connected players -->
         <button id="start-game-button" onclick="startGame()" style="display:none;">Start Game</button>
     </div>
+    
 
     <div id="game-screen" style="display:none;">
         <h2 id="team-display"></h2>
@@ -74,6 +77,12 @@
                 document.getElementById('player-setup').style.display = 'none';
                 document.getElementById('host-setup').style.display = 'block';
                 document.getElementById('host-ip').textContent = ipAddress;
+            } else {
+                // Player role
+                document.getElementById('player-setup').style.display = 'none'; // Hide setup div
+                document.getElementById('game').style.display = 'block'; // Show game div
+                document.getElementById('player-name-display').textContent = `Player: ${playerName}`; // Display player's name
+                document.getElementById('session-id-display').textContent = `Session ID: ${sessionId}`; // Display session ID
             }
 
             socket = new WebSocket(`ws://${ipAddress}:8765`);
@@ -109,6 +118,8 @@
             });
         }
 
+
+
         function updatePlayerList(players) {
             const playerList = document.getElementById('player-list');
             playerList.innerHTML = '';
@@ -121,11 +132,12 @@
             if (players.length === 4) {
                 document.getElementById('start-game-button').style.display = 'block';
             }
-
+            
             // Update host screen
             const playerListHost = document.getElementById('player-list-host');
             playerListHost.textContent = 'Connected Players: ' + players.join(', ');
         }
+
 
         function startGame() {
             const totalRounds = prompt("Enter number of rounds (1-12):");
