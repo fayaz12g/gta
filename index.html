@@ -168,16 +168,22 @@
                 currentScript = script;
                 currentLine = 0;
 
-                if (role === 'Person 1' || role === 'Person 2' || role === 'Person 3') {
-                    document.getElementById('dialogue').style.display = 'block';
-                    document.getElementById('next-button').style.display = 'block';
-                    showNextLine(role);
-                } else if (role === 'Guesser') {
-                    document.getElementById('guess').style.display = 'block';
-                    createGuessButtons();
+                // Update the UI based on role
+                if (role === 'host') {
+                    // Show leaderboard
+                    updateLeaderboard({});
+                    document.getElementById('leaderboard').style.display = 'block';
+                } else {
+                    // Show dialogue for players
+                    if (role === 'Person 1' || role === 'Person 2' || role === 'Person 3') {
+                        document.getElementById('dialogue').style.display = 'block';
+                        document.getElementById('next-button').style.display = 'block';
+                        showNextLine(role);
+                    } else if (role === 'Guesser') {
+                        document.getElementById('guess').style.display = 'block';
+                        createGuessButtons();
+                    }
                 }
-
-                document.getElementById('leaderboard').style.display = 'block';
             })
             .catch(error => {
                 console.error('Error fetching script:', error);
