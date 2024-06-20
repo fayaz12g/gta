@@ -87,6 +87,9 @@ async def start_round(session_id):
     session['current_script'] = script
     session['player_roles'] = player_roles
 
+    # Print debug information
+    print(f"Chosen script ID: {script['script_id']}")  # Assuming 'scripts' is a list of dictionaries
+
     # Send start_round message with script_id
     for player in players:
         if player['role'] == 'Guesser':
@@ -110,8 +113,6 @@ async def start_round(session_id):
 
     await update_leaderboard(session_id)
     await notify_host(session_id)
-
-
 
 async def notify_players(session_id):
     players = sessions[session_id]['players']
