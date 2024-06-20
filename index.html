@@ -38,6 +38,11 @@
 
     <div id="game-screen" style="display:none;">
         <h2 id="team-display"></h2>
+        <div id="round-display"></div> <!-- Display round number here -->
+        <div id="leaderboard" style="display:none;">
+            <h2>Leaderboard</h2>
+            <ul id="leaderboard-list"></ul> <!-- Display leaderboard here -->
+        </div>
         <div id="dialogue" style="display:none;">
             <p id="dialogue-text"></p>
             <button id="next-button" onclick="nextLine()" style="display:none;">Next</button>
@@ -46,11 +51,8 @@
             <h2>Who was the adlibber?</h2>
             <div id="guess-buttons"></div>
         </div>
-        <div id="leaderboard" style="display:none;">
-            <h2>Leaderboard</h2>
-            <ul id="leaderboard-list"></ul>
-        </div>
     </div>
+    
 
     <script>
         let socket;
@@ -148,11 +150,18 @@
             socket.send(JSON.stringify({ type: 'start_game', sessionId: sessionId, total_rounds: totalRounds }));
         }
 
+        // Function to update the round display
+        function updateRoundDisplay(round) {
+            const roundDisplay = document.getElementById('round-display');
+            roundDisplay.textContent = `Round ${round}`;
+        }
+
+        // Function to start the round
         function startRound(role, script, name, round) {
             document.getElementById('game').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
             document.getElementById('team-display').textContent = `You are ${role}`;
-            document.getElementById('round').textContent = `Round ${round}`;
+            updateRoundDisplay(round); // Display round number
             document.getElementById('name').textContent = name;
 
             currentScript = script;
@@ -166,6 +175,9 @@
                 document.getElementById('guess').style.display = 'block';
                 createGuessButtons();
             }
+
+            // Always show leaderboard
+            document.getElementById('leaderboard').style.display = 'block';
         }
 
         function showNextLine(role) {
@@ -210,6 +222,7 @@
             }));
         }
 
+        // Function to update the leaderboard on UI
         function updateLeaderboard(leaderboard) {
             const leaderboardList = document.getElementById('leaderboard-list');
             leaderboardList.innerHTML = '';
@@ -220,7 +233,15 @@
             }
         }
 
+        // Function to handle end of game
         function endGame(leaderboard) {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+            for (const [name, points] of Object.entries(leaderboard)) {
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${points} points`;
+                leaderboardList.appendChild(li);
+            }
             alert('Game Over! Final Scores: ' + JSON.stringify(leaderboard));
         }
     </script>

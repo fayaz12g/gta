@@ -69,10 +69,9 @@ async def handler(websocket, path):
 async def start_round(session_id):
     session = sessions[session_id]
     session['current_round'] += 1
-    
-    total_rounds = int(session['total_rounds'])  # Convert total_rounds to integer
-    
-    if session['current_round'] > total_rounds:  # Compare as integers
+    total_rounds = session['total_rounds']
+
+    if session['current_round'] > total_rounds:
         await end_game(session_id)
         return
 
@@ -85,6 +84,8 @@ async def start_round(session_id):
         player_roles[player['name']] = role
 
     script = random.choice(session['scripts'])
+    session['current_script'] = script
+    session['player_roles'] = player_roles
 
     for player in players:
         if player['role'] == 'Guesser':
@@ -93,17 +94,21 @@ async def start_round(session_id):
                 'role': 'guesser',
                 'team': player['role'],
                 'name': player['name'],
-                'round': f"{session['current_round']}/{total_rounds}"
+                'round': f"{session['current_round']}/{session['total_rounds']}"
             }))
         else:
             await player['websocket'].send(json.dumps({
                 'type': 'start_round',
-                'role': 'speaker',
+                'role': player['role'],
                 'script': script,
                 'team': player['role'],
                 'name': player['name'],
-                'round': f"{session['current_round']}/{total_rounds}"
+                'round': f"{session['current_round']}/{session['total_rounds']}"
             }))
+
+    await update_leaderboard(session_id)
+    await notify_host(session_id)
+
 
 
 async def notify_players(session_id):
@@ -133,34 +138,42 @@ async def notify_host(session_id):
 async def update_leaderboard(session_id):
     session = sessions[session_id]
     leaderboard = session['leaderboard']
-    host = session['host']
+
     for player in session['players']:
         await player['websocket'].send(json.dumps({
             'type': 'update_leaderboard',
             'leaderboard': leaderboard
         }))
+
+    host = session['host']
     if host:
         await host.send(json.dumps({
             'type': 'update_leaderboard',
             'leaderboard': leaderboard
         }))
+
     print(f"Updated leaderboard for session {session_id}.")
+
 
 async def end_game(session_id):
     session = sessions[session_id]
     leaderboard = session['leaderboard']
-    host = session['host']
+
     for player in session['players']:
         await player['websocket'].send(json.dumps({
             'type': 'end_game',
             'leaderboard': leaderboard
         }))
+
+    host = session['host']
     if host:
         await host.send(json.dumps({
             'type': 'end_game',
             'leaderboard': leaderboard
         }))
+
     print(f"Game ended for session {session_id}.")
+
 
 async def load_scripts():
     script_path = os.path.join(os.path.dirname(__file__), 'scripts.json')
