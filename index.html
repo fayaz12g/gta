@@ -46,7 +46,7 @@
         <div id="dialogue" style="display:none;">
             <p id="dialogue-text"></p>
             <button id="next-button" onclick="nextLine()" style="display:none;">Next</button>
-        </div>
+        </div>        
         <div id="guess" style="display:none;">
             <h2>Who was the adlibber?</h2>
             <div id="guess-buttons"></div>
@@ -154,7 +154,7 @@
             document.getElementById('name').textContent = name;
 
             // Fetch script data based on scriptId
-            fetch(`/api/scripts/${scriptId}`)  // Adjust API endpoint based on your server setup
+            fetch(`/api/scripts/${scriptId}`)
                 .then(response => response.json())
                 .then(script => {
                     currentScript = script;
@@ -179,17 +179,21 @@
         }
 
         function showNextLine(role) {
-            const line = currentScript.dialogue[currentLine];
+            if (currentScript && currentScript.dialogue) {
+                const line = currentScript.dialogue[currentLine];
 
-            if (role === line.speaker) {
-                document.getElementById('dialogue-text').textContent = line.text;
+                if (role === line.speaker) {
+                    document.getElementById('dialogue-text').textContent = line.text;
+                } else {
+                    document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
+                }
+
+                currentLine++;
+                if (currentLine >= currentScript.dialogue.length) {
+                    document.getElementById('next-button').style.display = 'none';
+                }
             } else {
-                document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
-            }
-
-            currentLine++;
-            if (currentLine >= currentScript.dialogue.length) {
-                document.getElementById('next-button').style.display = 'none';
+                console.error('No current script or dialogue found.');
             }
         }
 
