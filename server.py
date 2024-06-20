@@ -87,27 +87,30 @@ async def start_round(session_id):
     session['current_script'] = script
     session['player_roles'] = player_roles
 
+    # Send start_round message with script_id
     for player in players:
         if player['role'] == 'Guesser':
             await player['websocket'].send(json.dumps({
                 'type': 'start_round',
                 'role': 'guesser',
+                'script_id': script['script_id'],  # Include script_id here
                 'team': player['role'],
                 'name': player['name'],
-                'round': f"{session['current_round']}/{total_rounds}"  # Use total_rounds as integer
+                'round': f"{session['current_round']}/{total_rounds}"
             }))
         else:
             await player['websocket'].send(json.dumps({
                 'type': 'start_round',
                 'role': player['role'],
-                'script': script,
+                'script_id': script['script_id'],  # Include script_id here
                 'team': player['role'],
                 'name': player['name'],
-                'round': f"{session['current_round']}/{total_rounds}"  # Use total_rounds as integer
+                'round': f"{session['current_round']}/{total_rounds}"
             }))
 
     await update_leaderboard(session_id)
     await notify_host(session_id)
+
 
 
 async def notify_players(session_id):
