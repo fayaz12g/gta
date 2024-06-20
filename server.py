@@ -69,7 +69,10 @@ async def handler(websocket, path):
 async def start_round(session_id):
     session = sessions[session_id]
     session['current_round'] += 1
-    if session['current_round'] > session['total_rounds']:
+    
+    total_rounds = int(session['total_rounds'])  # Convert total_rounds to integer
+    
+    if session['current_round'] > total_rounds:  # Compare as integers
         await end_game(session_id)
         return
 
@@ -90,7 +93,7 @@ async def start_round(session_id):
                 'role': 'guesser',
                 'team': player['role'],
                 'name': player['name'],
-                'round': f"{session['current_round']}/{session['total_rounds']}"
+                'round': f"{session['current_round']}/{total_rounds}"
             }))
         else:
             await player['websocket'].send(json.dumps({
@@ -99,8 +102,9 @@ async def start_round(session_id):
                 'script': script,
                 'team': player['role'],
                 'name': player['name'],
-                'round': f"{session['current_round']}/{session['total_rounds']}"
+                'round': f"{session['current_round']}/{total_rounds}"
             }))
+
 
 async def notify_players(session_id):
     players = sessions[session_id]['players']

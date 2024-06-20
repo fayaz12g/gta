@@ -154,13 +154,15 @@
             document.getElementById('team-display').textContent = `You are ${role}`;
             document.getElementById('round').textContent = `Round ${round}`;
             document.getElementById('name').textContent = name;
+
             currentScript = script;
             currentLine = 0;
+
             if (role === 'Person 1' || role === 'Person 2' || role === 'Person 3') {
                 document.getElementById('dialogue').style.display = 'block';
                 document.getElementById('next-button').style.display = 'block';
                 showNextLine(role);
-            } else if (role === 'guesser') {
+            } else if (role === 'Guesser') {
                 document.getElementById('guess').style.display = 'block';
                 createGuessButtons();
             }
@@ -168,15 +170,21 @@
 
         function showNextLine(role) {
             const line = currentScript.dialogue[currentLine];
-            if (role === 'Person 1' && line.speaker === 'Person 1') {
-                document.getElementById('dialogue-text').textContent = 'ADLIB';
-            } else {
+            
+            if (role === line.speaker) {
                 document.getElementById('dialogue-text').textContent = line.text;
+            } else {
+                document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
             }
+
             currentLine++;
             if (currentLine >= currentScript.dialogue.length) {
                 document.getElementById('next-button').style.display = 'none';
             }
+        }
+
+        function nextLine() {
+            showNextLine(document.getElementById('team-display').textContent.split(' ')[2]); // Get current role
         }
 
         function createGuessButtons() {
