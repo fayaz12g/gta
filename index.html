@@ -54,10 +54,9 @@
         let currentLine = 0;
 
         function generateRandomSessionId() {
-        // Combine current timestamp (milliseconds) with random number for some uniqueness
-        const timestamp = Date.now();
-        const randomPart = Math.random().toString(36).slice(2); // Convert to base 36 and remove leading "0."
-        return `${timestamp}-${randomPart}`;
+            const timestamp = Date.now();
+            const randomPart = Math.random().toString(36).slice(2);
+            return `${timestamp}-${randomPart}`;
         }
 
         const sessionId = generateRandomSessionId();
@@ -72,7 +71,7 @@
             if (role === 'host') {
                 document.getElementById('player-setup').style.display = 'none';
                 document.getElementById('host-setup').style.display = 'block';
-                document.getElementById('host-ip').textContent = window.location.hostname;
+                document.getElementById('host-ip').textContent = ipAddress;
             }
 
             socket = new WebSocket(`ws://${ipAddress}:8765`);
@@ -165,7 +164,7 @@
             const guessButtons = document.getElementById('guess-buttons');
             guessButtons.innerHTML = '';
             for (const name in playerRoles) {
-                if (playerRoles[name] !== 'Adlibber') {
+                if (playerRoles[name] !== 'Person 1') {
                     const button = document.createElement('button');
                     button.textContent = name;
                     button.onclick = () => submitGuess(name);

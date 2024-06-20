@@ -33,7 +33,7 @@ async def handler(websocket, path):
                 print(f"Player {player_name} attempting to join session {session_id}")
                 if sessions[session_id]['host'] is None:
                     await websocket.send(json.dumps({'type': 'error', 'message': 'Host not connected yet'}))
-                    print("Host not connected yet, player cannot join.")
+                    print(f"Host not connected yet, player {player_name} cannot join.")
                     continue
                 sessions[session_id]['players'].append({
                     'websocket': websocket,
@@ -46,12 +46,14 @@ async def handler(websocket, path):
                 await notify_host(session_id)
 
         elif data['type'] == 'start_game':
+            print(f"Game starting for session {session_id} with {data['total_rounds']} rounds.")
             total_rounds = data['total_rounds']
             sessions[session_id]['total_rounds'] = total_rounds
             sessions[session_id]['game_started'] = True
             await start_round(session_id)
 
         elif data['type'] == 'submit_guess':
+            print(f"Guess submitted in session {session_id}.")
             session = sessions[session_id]
             guesser_name = data['guesser']
             guessed_player = data['guess']
@@ -108,6 +110,7 @@ async def notify_players(session_id):
             'type': 'update_players',
             'players': player_names
         }))
+    print(f"Notified players in session {session_id} of player list update.")
 
 async def notify_host(session_id):
     host = sessions[session_id]['host']
@@ -120,6 +123,8 @@ async def notify_host(session_id):
         'type': 'update_players',
         'players': player_names
     }))
+    print(f"Notified host in session {session_id} of player list update with players: {player_names}")
+
 
 async def update_leaderboard(session_id):
     session = sessions[session_id]
@@ -135,6 +140,7 @@ async def update_leaderboard(session_id):
             'type': 'update_leaderboard',
             'leaderboard': leaderboard
         }))
+    print(f"Updated leaderboard for session {session_id}.")
 
 async def end_game(session_id):
     session = sessions[session_id]
@@ -150,11 +156,13 @@ async def end_game(session_id):
             'type': 'end_game',
             'leaderboard': leaderboard
         }))
+    print(f"Game ended for session {session_id}.")
 
 async def load_scripts():
     script_path = os.path.join(os.path.dirname(__file__), 'scripts.json')
     with open(script_path) as f:
         scripts = json.load(f)
+    print("Loaded scripts from scripts.json")
     return scripts
 
 start_server = websockets.serve(handler, '0.0.0.0', 8765)
