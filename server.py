@@ -88,6 +88,19 @@ async def handler(websocket, path):
                     'type': 'error',
                     'message': f"Script with ID {script_id} not found."
                 }))
+        elif path.startswith('/api/scripts/'):
+            script_id = path.split('/')[-1]  # Extract the script ID from the path
+            try:
+                script = next(script for script in sessions[session_id]['scripts'] if script['script_id'] == int(script_id))
+                await websocket.send(json.dumps({
+                    'type': 'script_details',
+                    'script': script
+                }))
+            except StopIteration:
+                await websocket.send(json.dumps({
+                    'type': 'error',
+                    'message': f"Script with ID {script_id} not found."
+                }))
 
 async def start_round(session_id):
     session = sessions[session_id]

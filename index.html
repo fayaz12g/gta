@@ -55,198 +55,200 @@
     </div>    
     
 
-    <script>
-        let socket;
-        let currentScript;
-        let currentLine = 0;
-    
-        const sessionId = 'session-id'; // Replace with dynamic session ID later
-    
-        let playerRoles = {};
-    
-        function connect() {
-            const role = document.getElementById('role').value;
-            const ipAddress = document.getElementById('ip-address').value;
-            const playerName = document.getElementById('player-name').value;
+<script>
+    let socket;
+    let currentScript;
+    let currentLine = 0;
 
-            if (role === 'host') {
-                document.getElementById('player-setup').style.display = 'none';
-                document.getElementById('host-setup').style.display = 'block';
-                document.getElementById('host-ip').textContent = ipAddress;
-            } else {
-                document.getElementById('player-setup').style.display = 'none';
-                document.getElementById('game').style.display = 'block';
-                document.getElementById('player-name-display').textContent = `Player: ${playerName}`;
-                document.getElementById('session-id-display').textContent = `Session ID: ${sessionId}`;
-            }
+    const sessionId = 'session-id'; // Replace with dynamic session ID later
 
-            socket = new WebSocket(`ws://${ipAddress}:8765`);
+    let playerRoles = {};
 
-            socket.addEventListener('open', function () {
-                socket.send(JSON.stringify({
-                    type: 'join',
-                    role: role,
-                    name: playerName,
-                    sessionId: sessionId
-                }));
-            });
+    function connect() {
+        const role = document.getElementById('role').value;
+        const ipAddress = document.getElementById('ip-address').value;
+        const playerName = document.getElementById('player-name').value;
 
-            socket.addEventListener('message', function (event) {
-                const data = JSON.parse(event.data);
-                if (data.type === 'update_players') {
-                    updatePlayerList(data.players);
-                } else if (data.type === 'start_round') {
-                    startRound(data.role, data.script_id, data.name, data.round, data.ipAddress); // Pass ipAddress from server
-                } else if (data.type === 'update_leaderboard') {
-                    updateLeaderboard(data.leaderboard);
-                } else if (data.type === 'end_game') {
-                    endGame(data.leaderboard);
-                }
-            });
-
-            socket.addEventListener('error', function () {
-                alert('Failed to connect. Please check the IP address and try again.');
-            });
-
-            socket.addEventListener('close', function () {
-                alert('Connection closed.');
-            });
+        if (role === 'host') {
+            document.getElementById('player-setup').style.display = 'none';
+            document.getElementById('host-setup').style.display = 'block';
+            document.getElementById('host-ip').textContent = ipAddress;
+        } else {
+            document.getElementById('player-setup').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('player-name-display').textContent = `Player: ${playerName}`;
+            document.getElementById('session-id-display').textContent = `Session ID: ${sessionId}`;
         }
 
-    
-        function updatePlayerList(players) {
-            const playerList = document.getElementById('player-list');
-            playerList.innerHTML = '';
-            players.forEach(player => {
-                const li = document.createElement('li');
-                li.textContent = player;
-                playerList.appendChild(li);
-            });
-    
-            if (players.length === 4) {
-                document.getElementById('start-game-button').style.display = 'block';
-            }
-    
-            // Update host screen
-            const playerListHost = document.getElementById('player-list-host');
-            playerListHost.textContent = 'Connected Players: ' + players.join(', ');
-        }
-    
-        function startGame() {
-            const totalRounds = prompt("Enter number of rounds (1-12):");
-            if (totalRounds < 1 || totalRounds > 12) {
-                alert('Invalid number of rounds. Please enter a number between 1 and 12.');
-                return;
-            }
-            socket.send(JSON.stringify({ type: 'start_game', sessionId: sessionId, total_rounds: totalRounds }));
-        }
-    
-        function updateRoundDisplay(round) {
-            const roundDisplay = document.getElementById('round-display');
-            roundDisplay.textContent = `Round ${round}`;
-        }
-    
-        function startRound(role, scriptId, name, round, ipAddress) {
-            document.getElementById('game').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'block';
-            document.getElementById('team-display').textContent = `You are ${role}`;
-            updateRoundDisplay(round);
-            document.getElementById('name-display').textContent = name;
+        socket = new WebSocket(`ws://${ipAddress}:8765`);
 
-            fetch(`http://${ipAddress}:8765/api/scripts/${scriptId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch script');
-                    }
-                    return response.json();
-                })
-                .then(script => {
-                    currentScript = script;
-                    currentLine = 0;
-
-                    if (role === 'Person 1' || role === 'Person 2' || role === 'Person 3') {
-                        document.getElementById('dialogue').style.display = 'block';
-                        document.getElementById('next-button').style.display = 'block';
-                        showNextLine(role);
-                    } else if (role === 'Guesser') {
-                        document.getElementById('guess').style.display = 'block';
-                        createGuessButtons();
-                    }
-
-                    document.getElementById('leaderboard').style.display = 'block';
-                })
-                .catch(error => {
-                    console.error('Error fetching script:', error);
-                    alert('Failed to fetch script data. Please try again.');
-                });
-        }
-
-
-
-
-        function showNextLine(role) {
-            const line = currentScript.dialogue[currentLine];
-
-            if (role === line.speaker) {
-                document.getElementById('dialogue-text').textContent = line.text;
-            } else {
-                document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
-            }
-
-            currentLine++;
-            if (currentLine >= currentScript.dialogue.length) {
-                document.getElementById('next-button').style.display = 'none';
-            }
-        }
-
-    
-        function nextLine() {
-            showNextLine(document.getElementById('team-display').textContent.split(' ')[2]); // Get current role
-        }
-    
-        function createGuessButtons() {
-            const guessButtons = document.getElementById('guess-buttons');
-            guessButtons.innerHTML = '';
-            for (const name in playerRoles) {
-                if (playerRoles[name] !== 'Person 1') {
-                    const button = document.createElement('button');
-                    button.textContent = name;
-                    button.onclick = () => submitGuess(name);
-                    guessButtons.appendChild(button);
-                }
-            }
-        }
-    
-        function submitGuess(person) {
+        socket.addEventListener('open', function () {
             socket.send(JSON.stringify({
-                type: 'submit_guess',
-                sessionId: sessionId,
-                guesser: document.getElementById('name').textContent,
-                guess: person,
-                adlibber: Object.keys(playerRoles).find(name => playerRoles[name] === 'Person 1')
+                type: 'join',
+                role: role,
+                name: playerName,
+                sessionId: sessionId
             }));
+        });
+
+        socket.addEventListener('message', function (event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'update_players') {
+                updatePlayerList(data.players);
+            } else if (data.type === 'start_round') {
+                startRound(data.role, data.script_id, data.name, data.round, data.ipAddress); // Pass ipAddress from server
+            } else if (data.type === 'update_leaderboard') {
+                updateLeaderboard(data.leaderboard);
+            } else if (data.type === 'end_game') {
+                endGame(data.leaderboard);
+            }
+        });
+
+        socket.addEventListener('error', function () {
+            alert('Failed to connect. Please check the IP address and try again.');
+        });
+
+        socket.addEventListener('close', function () {
+            alert('Connection closed.');
+        });
+    }
+
+
+    function updatePlayerList(players) {
+        const playerList = document.getElementById('player-list');
+        playerList.innerHTML = '';
+        players.forEach(player => {
+            const li = document.createElement('li');
+            li.textContent = player;
+            playerList.appendChild(li);
+        });
+
+        if (players.length === 4) {
+            document.getElementById('start-game-button').style.display = 'block';
         }
-    
-        function updateLeaderboard(leaderboard) {
-            const leaderboardList = document.getElementById('leaderboard-list');
-            leaderboardList.innerHTML = '';
-            for (const [name, points] of Object.entries(leaderboard)) {
-                const li = document.createElement('li');
-                li.textContent = `${name}: ${points} points`;
-                leaderboardList.appendChild(li);
+
+        // Update host screen
+        const playerListHost = document.getElementById('player-list-host');
+        playerListHost.textContent = 'Connected Players: ' + players.join(', ');
+    }
+
+    function startGame() {
+        const totalRounds = prompt("Enter number of rounds (1-12):");
+        if (totalRounds < 1 || totalRounds > 12) {
+            alert('Invalid number of rounds. Please enter a number between 1 and 12.');
+            return;
+        }
+        socket.send(JSON.stringify({ type: 'start_game', sessionId: sessionId, total_rounds: totalRounds }));
+    }
+
+    function updateRoundDisplay(round) {
+        const roundDisplay = document.getElementById('round-display');
+        roundDisplay.textContent = `Round ${round}`;
+    }
+
+    function startRound(role, scriptId, name, round, ipAddress) {
+        document.getElementById('game').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        document.getElementById('team-display').textContent = `You are ${role}`;
+        updateRoundDisplay(round);
+        document.getElementById('name-display').textContent = name;
+
+        fetch(`https://raw.githubusercontent.com/fayaz12g/gta/main/scripts.json`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch scripts');
+                }
+                return response.json();
+            })
+            .then(scripts => {
+                const script = scripts.find(script => script.script_id === scriptId);
+                if (!script) {
+                    throw new Error(`Script with ID ${scriptId} not found`);
+                }
+                currentScript = script;
+                currentLine = 0;
+
+                if (role === 'Person 1' || role === 'Person 2' || role === 'Person 3') {
+                    document.getElementById('dialogue').style.display = 'block';
+                    document.getElementById('next-button').style.display = 'block';
+                    showNextLine(role);
+                } else if (role === 'Guesser') {
+                    document.getElementById('guess').style.display = 'block';
+                    createGuessButtons();
+                }
+
+                document.getElementById('leaderboard').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error fetching script:', error);
+                alert('Failed to fetch script data. Please try again.');
+            });
+    }
+
+    function showNextLine(role) {
+        const line = currentScript.dialogue[currentLine];
+
+        if (role === line.speaker) {
+            document.getElementById('dialogue-text').textContent = line.text;
+        } else {
+            document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
+        }
+
+        currentLine++;
+        if (currentLine >= currentScript.dialogue.length) {
+            document.getElementById('next-button').style.display = 'none';
+        }
+    }
+
+
+    function nextLine() {
+        showNextLine(document.getElementById('team-display').textContent.split(' ')[2]); // Get current role
+    }
+
+    function createGuessButtons() {
+        const guessButtons = document.getElementById('guess-buttons');
+        guessButtons.innerHTML = '';
+        for (const name in playerRoles) {
+            if (playerRoles[name] !== 'Person 1') {
+                const button = document.createElement('button');
+                button.textContent = name;
+                button.onclick = () => submitGuess(name);
+                guessButtons.appendChild(button);
             }
         }
-    
-        function endGame(leaderboard) {
-            const leaderboardList = document.getElementById('leaderboard-list');
-            leaderboardList.innerHTML = '';
-            for (const [name, points] of Object.entries(leaderboard)) {
-                const li = document.createElement('li');
-                li.textContent = `${name}: ${points} points`;
-                leaderboardList.appendChild(li);
-            }
-            alert('Game Over! Final Scores: ' + JSON.stringify(leaderboard));
+    }
+
+    function submitGuess(person) {
+        socket.send(JSON.stringify({
+            type: 'submit_guess',
+            sessionId: sessionId,
+            guesser: document.getElementById('name').textContent,
+            guess: person,
+            adlibber: Object.keys(playerRoles).find(name => playerRoles[name] === 'Person 1')
+        }));
+    }
+
+    function updateLeaderboard(leaderboard) {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        leaderboardList.innerHTML = '';
+        for (const [name, points] of Object.entries(leaderboard)) {
+            const li = document.createElement('li');
+            li.textContent = `${name}: ${points} points`;
+            leaderboardList.appendChild(li);
         }
-    </script>    
+    }
+
+    function endGame(leaderboard) {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        leaderboardList.innerHTML = '';
+        for (const [name, points] of Object.entries(leaderboard)) {
+            const li = document.createElement('li');
+            li.textContent = `${name}: ${points} points`;
+            leaderboardList.appendChild(li);
+        }
+        alert('Game Over! Final Scores: ' + JSON.stringify(leaderboard));
+    }
+</script>
+    
 </body>
 </html>
