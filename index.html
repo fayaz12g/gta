@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multiplayer Game</title>
+</head>
+<body>
+    <h1>Multiplayer Game</h1>
+    <div id="setup">
+        <label for="role">Are you a player or host?</label>
+        <select id="role">
+            <option value="player">Player</option>
+            <option value="host">Host</option>
+        </select>
+        <div id="player-setup">
+            <label for="ip-address">Enter the server IP address:</label>
+            <input type="text" id="ip-address" placeholder="e.g., 192.168.1.2">
+            <br>
+            <label for="player-name">Enter your name:</label>
+            <input type="text" id="player-name" placeholder="Your name">
+            <button onclick="connect()">Connect</button>
+        </div>
+        <div id="host-setup" style="display:none;">
+            <h2>Your IP address: <span id="host-ip"></span></h2>
+            <p>Players can use this IP address to connect to the game.</p>
+        </div>
+    </div>
+
+    <div id="game" style="display:none;">
+        <h2>Connected Players</h2>
+        <ul id="player-list"></ul>
+        <button id="start-game-button" onclick="startGame()" style="display:none;">Start Game</button>
+    </div>
+
+    <div id="game-screen" style="display:none;">
+        <h2 id="team-display"></h2>
+        <div id="dialogue" style="display:none;">
+            <p id="dialogue-text"></p>
+            <button id="next-button" onclick="nextLine()" style="display:none;">Next</button>
+        </div>
+        <div id="guess" style="display:none;">
+            <h2>Who was the adlibber?</h2>
+            <div id="guess-buttons"></div>
+        </div>
+        <div id="leaderboard" style="display:none;">
+            <h2>Leaderboard</h2>
+            <ul id="leaderboard-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let currentScript;
+        let currentLine = 0;
+        const sessionId = 'your-session-id';  // Unique session ID
+        let playerRoles = {};
+
+        function connect() {
+            const role = document.getElementById('role').value;
+            const ipAddress = document.getElementById('ip-address').value;
+            const playerName = document.getElementById('player-name').value;
+
+            if (role === 'host') {
+                document.getElementById('player-setup').style.display = 'none';
+                document.getElementById('host-setup').style.display = 'block';
+                document.getElementById('host-ip').textContent = 'your-pc-ip-address';
+                socket = new WebSocket(`ws://0.0.0.0:8765`);
+
+                socket.addEventListener('open', function () {
+                    socket.send(JSON.stringify({ type: 'join', role: 'host', sessionId: sessionId }));
+                    document.getElementById('setup').style.display = 'none';
+                    document.getElementById('game').style.display = 'block';
+                });
+
+            } else {
+                if (!ipAddress || !playerName) {
+                    alert('Please enter a valid IP address and your name.');
+                    return;
+                }
+
+                const wsUrl = `ws://${ipAddress}:8765`;
+                socket = new WebSocket(wsUrl);
+
+                socket.addEventListener('open', function () {
+                    socket.send(JSON.stringify({ type: 'join', role: 'player', sessionId: sessionId, name: playerName }));
+                    document.getElementById('setup').style.display = 'none';
+                    document.getElementById('game').style.display = 'block';
+                });
+            }
+
+            socket.addEventListener('message', function (event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'update_players') {
+                    updatePlayerList(data.players);
+                } else if (data.type === 'start_game') {
+                    showGameScreen(data.team, data.script, data.name, data.round);
+                } else if (data.type === 'start_round') {
+                    startRound(data.team, data.script, data.name, data.round);
+                } else if (data.type === 'update_leaderboard') {
+                    updateLeaderboard(data.leaderboard);
+                } else if (data.type === 'end_game') {
+                    endGame(data.leaderboard);
+                }
+            });
+
+            socket.addEventListener('error', function () {
+                alert('Failed to connect. Please check the IP address and try again.');
+            });
+
+            socket.addEventListener('close', function () {
+                alert('Connection closed.');
+            });
+        }
+
+        function updatePlayerList(players) {
+            const playerList = document.getElementById('player-list');
+            playerList.innerHTML = '';
+            players.forEach(player => {
+                const li = document.createElement('li');
+                li.textContent = player;
+                playerList.appendChild(li);
+            });
+            if (players.length === 4) {
+                document.getElementById('start-game-button').style.display = 'block';
+            }
+        }
+
+        function startGame() {
+            const totalRounds = prompt("Enter number of rounds (1-12):");
+            if (totalRounds < 1 || totalRounds > 12) {
+                alert('Invalid number of rounds. Please enter a number between 1 and 12.');
+                return;
+            }
+            socket.send(JSON.stringify({ type: 'start_game', sessionId: sessionId, total_rounds: totalRounds }));
+        }
+
+        function showGameScreen(team, script, name, round) {
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('team-display').textContent = `You are on ${team}`;
+            document.getElementById('round').textContent = `Round ${round}`;
+            document.getElementById('name').textContent = name;
+            currentScript = script;
+            currentLine = 0;
+            if (team === 'Person 1' || team === 'Person 2' || team === 'Person 3') {
+                document.getElementById('dialogue').style.display = 'block';
+                document.getElementById('next-button').style.display = 'block';
+                showNextLine();
+            } else {
+                document.getElementById('guess').style.display = 'block';
+                createGuessButtons();
+            }
+        }
+
+        function showNextLine() {
+            const line = currentScript.dialogue[currentLine];
+            document.getElementById('dialogue-text').textContent = line.text;
+            currentLine++;
+            if (currentLine >= currentScript.dialogue.length) {
+                document.getElementById('next-button').style.display = 'none';
+            }
+        }
+
+        function createGuessButtons() {
+            const guessButtons = document.getElementById('guess-buttons');
+            guessButtons.innerHTML = '';
+            for (const name in playerRoles) {
+                if (playerRoles[name] !== 'Adlibber') {
+                    const button = document.createElement('button');
+                    button.textContent = name;
+                    button.onclick = () => submitGuess(name);
+                    guessButtons.appendChild(button);
+                }
+            }
+        }
+
+        function submitGuess(person) {
+            socket.send(JSON.stringify({
+                type: 'submit_guess',
+                sessionId: sessionId,
+                guesser: document.getElementById('name').textContent,
+                guess: person,
+                adlibber: Object.keys(playerRoles).find(name => playerRoles[name] === 'Adlibber')
+            }));
+        }
+
+        function updateLeaderboard(leaderboard) {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+            for (const [name, points] of Object.entries(leaderboard)) {
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${points} points`;
+                leaderboardList.appendChild(li);
+            }
+        }
+
+        function endGame(leaderboard) {
+            alert('Game Over! Final Scores: ' + JSON.stringify(leaderboard));
+        }
+    </script>
+</body>
+</html>
