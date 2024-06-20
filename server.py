@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import json
 import random
+import os
 
 sessions = {}
 
@@ -25,9 +26,15 @@ async def handler(websocket, path):
             role = data['role']
             player_name = data['name'] if 'name' in data else None
             if role == 'host':
+                print(f"Host connected for session {session_id}")
                 sessions[session_id]['host'] = websocket
                 await websocket.send(json.dumps({'type': 'host_joined'}))
             elif role == 'player':
+                print(f"Player {player_name} attempting to join session {session_id}")
+                if sessions[session_id]['host'] is None:
+                    await websocket.send(json.dumps({'type': 'error', 'message': 'Host not connected yet'}))
+                    print("Host not connected yet, player cannot join.")
+                    continue
                 sessions[session_id]['players'].append({
                     'websocket': websocket,
                     'name': player_name,
@@ -67,8 +74,10 @@ async def start_round(session_id):
     players = session['players']
     random.shuffle(players)
     roles = ['Person 1', 'Person 2', 'Person 3', 'Guesser']
+    player_roles = {}
     for player, role in zip(players, roles):
         player['role'] = role
+        player_roles[player['name']] = role
 
     script = random.choice(session['scripts'])
 
@@ -102,7 +111,11 @@ async def notify_players(session_id):
 
 async def notify_host(session_id):
     host = sessions[session_id]['host']
-    player_names = [player['name'] for player in sessions[session_id]['players']]
+    if host is None:
+        print(f"No host found for session {session_id} when trying to notify host.")
+        return
+    players = sessions[session_id]['players']
+    player_names = [player['name'] for player in players]
     await host.send(json.dumps({
         'type': 'update_players',
         'players': player_names
@@ -110,25 +123,41 @@ async def notify_host(session_id):
 
 async def update_leaderboard(session_id):
     session = sessions[session_id]
-    host = session['host']
     leaderboard = session['leaderboard']
-    await host.send(json.dumps({
-        'type': 'update_leaderboard',
-        'leaderboard': leaderboard
-    }))
+    host = session['host']
+    for player in session['players']:
+        await player['websocket'].send(json.dumps({
+            'type': 'update_leaderboard',
+            'leaderboard': leaderboard
+        }))
+    if host:
+        await host.send(json.dumps({
+            'type': 'update_leaderboard',
+            'leaderboard': leaderboard
+        }))
 
 async def end_game(session_id):
     session = sessions[session_id]
+    leaderboard = session['leaderboard']
     host = session['host']
-    await host.send(json.dumps({'type': 'end_game', 'leaderboard': session['leaderboard']}))
     for player in session['players']:
-        await player['websocket'].send(json.dumps({'type': 'end_game'}))
+        await player['websocket'].send(json.dumps({
+            'type': 'end_game',
+            'leaderboard': leaderboard
+        }))
+    if host:
+        await host.send(json.dumps({
+            'type': 'end_game',
+            'leaderboard': leaderboard
+        }))
 
 async def load_scripts():
-    with open('scripts.json') as f:
-        return json.load(f)
+    script_path = os.path.join(os.path.dirname(__file__), 'scripts.json')
+    with open(script_path) as f:
+        scripts = json.load(f)
+    return scripts
 
-start_server = websockets.serve(handler, "0.0.0.0", 8765)
+start_server = websockets.serve(handler, '0.0.0.0', 8765)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()

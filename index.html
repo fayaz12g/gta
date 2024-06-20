@@ -52,7 +52,16 @@
         let socket;
         let currentScript;
         let currentLine = 0;
-        const sessionId = 'your-session-id';  // Unique session ID
+
+        function generateRandomSessionId() {
+        // Combine current timestamp (milliseconds) with random number for some uniqueness
+        const timestamp = Date.now();
+        const randomPart = Math.random().toString(36).slice(2); // Convert to base 36 and remove leading "0."
+        return `${timestamp}-${randomPart}`;
+        }
+
+        const sessionId = generateRandomSessionId();
+
         let playerRoles = {};
 
         function connect() {
