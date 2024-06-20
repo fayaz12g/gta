@@ -116,7 +116,7 @@ async def start_round(session_id):
                 'type': 'start_round',
                 'role': 'guesser',
                 'script_id': script['script_id'],  # Include script_id here
-                'ipAddress': '127.0.0.1',  # Replace with actual ipAddress or fetch from player data
+                'ipAddress': '192.168.44.3',  # Replace with actual ipAddress or fetch from player data
                 'name': player['name'],
                 'round': f"{session['current_round']}/{total_rounds}"
             }))
@@ -125,7 +125,7 @@ async def start_round(session_id):
                 'type': 'start_round',
                 'role': player['role'],
                 'script_id': script['script_id'],
-                'ipAddress': '127.0.0.1',  # Replace with actual ipAddress or fetch from player data
+                'ipAddress': '192.168.44.3',  # Replace with actual ipAddress or fetch from player data
                 'name': player['name'],
                 'round': f"{session['current_round']}/{total_rounds}"
             }))
