@@ -22,6 +22,7 @@
         </div>
         <div id="host-setup" style="display:none;">
             <h2>Your IP address: <span id="host-ip"></span></h2>
+            <p id="player-list-host"></p>
             <p>Players can use this IP address to connect to the game.</p>
         </div>
     </div>
@@ -60,7 +61,7 @@
         }
 
         // const sessionId = generateRandomSessionId();
-        const sessionId = 'your-session-id';  // Unique session ID
+        const sessionId = 'session-id'; // we can make this a settable thing later
 
         let playerRoles = {};
 
@@ -116,9 +117,14 @@
                 li.textContent = player;
                 playerList.appendChild(li);
             });
+
             if (players.length === 4) {
                 document.getElementById('start-game-button').style.display = 'block';
             }
+
+            // Update host screen
+            const playerListHost = document.getElementById('player-list-host');
+            playerListHost.textContent = 'Connected Players: ' + players.join(', ');
         }
 
         function startGame() {
