@@ -188,21 +188,42 @@
     function showNextLine(role) {
         const line = currentScript.dialogue[currentLine];
 
-        if (role === line.speaker) {
-            document.getElementById('dialogue-text').textContent = line.text;
-        } else {
-            document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
-        }
+        // Determine if it's the current speaker's turn
+        const isCurrentSpeaker = role === line.speaker;
 
-        currentLine++;
-        if (currentLine >= currentScript.dialogue.length) {
-            document.getElementById('next-button').style.display = 'none';
+        // Update dialogue text based on role
+        const dialogueText = isCurrentSpeaker ? line.text : 'Waiting for next line...';
+        document.getElementById('dialogue-text').textContent = dialogueText;
+
+        // If current speaker, show next button; otherwise, hide it
+        const nextButton = document.getElementById('next-button');
+        nextButton.style.display = isCurrentSpeaker ? 'block' : 'none';
+
+        // If it's the current speaker's turn, increment the current line index
+        if (isCurrentSpeaker) {
+            currentLine++;
         }
     }
 
-
     function nextLine() {
-        showNextLine(document.getElementById('team-display').textContent.split(' ')[2]); // Get current role
+        // Determine the current role
+        const currentRole = document.getElementById('team-display').textContent.split(' ')[2];
+
+        // Show "Waiting for next line..." for the current speaker
+        document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
+
+        // Move to the next speaker in the dialogue
+        currentSpeakerIndex++;
+        currentLine++; // Increment current line index
+
+        // Reset current speaker index when it exceeds the number of players
+        if (currentSpeakerIndex >= currentScript.dialogue.length) {
+            currentSpeakerIndex = 0;
+        }
+
+        // Update dialogue text for the next speaker
+        const nextLine = currentScript.dialogue[currentSpeakerIndex];
+        document.getElementById('dialogue-text').textContent = nextLine.text;
     }
 
     function createGuessButtons() {
