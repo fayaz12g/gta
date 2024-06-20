@@ -105,8 +105,7 @@ async def start_round(session_id):
             await player['websocket'].send(json.dumps({
                 'type': 'start_round',
                 'role': player['role'],
-                'script_id': script['script_id'],  # Include script_id here
-                'team': player['role'],
+                'script_id': script['script_id'],
                 'name': player['name'],
                 'round': f"{session['current_round']}/{total_rounds}"
             }))
