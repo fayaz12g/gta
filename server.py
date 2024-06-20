@@ -109,14 +109,14 @@ async def start_round(session_id):
     # Print debug information
     print(f"Chosen script ID: {script['script_id']}")  # Assuming 'scripts' is a list of dictionaries
 
-    # Send start_round message with script_id
+    # Send start_round message with script_id and ipAddress
     for player in players:
         if player['role'] == 'Guesser':
             await player['websocket'].send(json.dumps({
                 'type': 'start_round',
                 'role': 'guesser',
                 'script_id': script['script_id'],  # Include script_id here
-                'team': player['role'],
+                'ipAddress': '127.0.0.1',  # Replace with actual ipAddress or fetch from player data
                 'name': player['name'],
                 'round': f"{session['current_round']}/{total_rounds}"
             }))
@@ -125,12 +125,14 @@ async def start_round(session_id):
                 'type': 'start_round',
                 'role': player['role'],
                 'script_id': script['script_id'],
+                'ipAddress': '127.0.0.1',  # Replace with actual ipAddress or fetch from player data
                 'name': player['name'],
                 'round': f"{session['current_round']}/{total_rounds}"
             }))
 
     await update_leaderboard(session_id)
     await notify_host(session_id)
+
 
 async def notify_players(session_id):
     players = sessions[session_id]['players']
