@@ -51,8 +51,8 @@
             <h2>Who was the adlibber?</h2>
             <div id="guess-buttons"></div>
         </div>
-        <div id="player-name-display"></div> <!-- Add this element -->
-    </div>
+        <div id="name-display"></div> <!-- Make sure this element exists -->
+    </div>    
     
 
     <script>
@@ -152,7 +152,11 @@
             document.getElementById('game-screen').style.display = 'block';
             document.getElementById('team-display').textContent = `You are ${role}`;
             updateRoundDisplay(round); // Display round number
-            document.getElementById('name-display').textContent = name; // Corrected to 'name-display'
+            document.getElementById('name-display').textContent = name; // Ensure 'name-display' is correct
+            console.log('Name:', name);
+            let nameDisplayElement = document.getElementById('name-display');
+            console.log('Name Display Element:', nameDisplayElement);
+
 
             // Fetch script data based on scriptId
             fetch(`/api/scripts/${scriptId}`)
@@ -179,6 +183,7 @@
                     alert('Failed to fetch script data. Please try again.');
                 });
         }
+
 
 
         function showNextLine(role) {
