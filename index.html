@@ -58,23 +58,22 @@
         let socket;
         let currentScript;
         let currentLine = 0;
-
+    
         function generateRandomSessionId() {
             const timestamp = Date.now();
             const randomPart = Math.random().toString(36).slice(2);
             return `${timestamp}-${randomPart}`;
         }
-
-        // const sessionId = generateRandomSessionId();
-        const sessionId = 'session-id'; // we can make this a settable thing later
-
+    
+        const sessionId = 'session-id'; // Replace with dynamic session ID later
+    
         let playerRoles = {};
-
+    
         function connect() {
             const role = document.getElementById('role').value;
             const ipAddress = document.getElementById('ip-address').value;
             const playerName = document.getElementById('player-name').value;
-
+    
             if (role === 'host') {
                 document.getElementById('player-setup').style.display = 'none';
                 document.getElementById('host-setup').style.display = 'block';
@@ -86,9 +85,9 @@
                 document.getElementById('player-name-display').textContent = `Player: ${playerName}`; // Display player's name
                 document.getElementById('session-id-display').textContent = `Session ID: ${sessionId}`; // Display session ID
             }
-
+    
             socket = new WebSocket(`ws://${ipAddress}:8765`);
-
+    
             socket.addEventListener('open', function () {
                 socket.send(JSON.stringify({
                     type: 'join',
@@ -97,7 +96,7 @@
                     sessionId: sessionId
                 }));
             });
-
+    
             socket.addEventListener('message', function (event) {
                 const data = JSON.parse(event.data);
                 if (data.type === 'update_players') {
@@ -110,18 +109,16 @@
                     endGame(data.leaderboard);
                 }
             });
-
+    
             socket.addEventListener('error', function () {
                 alert('Failed to connect. Please check the IP address and try again.');
             });
-
+    
             socket.addEventListener('close', function () {
                 alert('Connection closed.');
             });
         }
-
-
-
+    
         function updatePlayerList(players) {
             const playerList = document.getElementById('player-list');
             playerList.innerHTML = '';
@@ -130,17 +127,16 @@
                 li.textContent = player;
                 playerList.appendChild(li);
             });
-
+    
             if (players.length === 4) {
                 document.getElementById('start-game-button').style.display = 'block';
             }
-            
+    
             // Update host screen
             const playerListHost = document.getElementById('player-list-host');
             playerListHost.textContent = 'Connected Players: ' + players.join(', ');
         }
-
-
+    
         function startGame() {
             const totalRounds = prompt("Enter number of rounds (1-12):");
             if (totalRounds < 1 || totalRounds > 12) {
@@ -149,24 +145,22 @@
             }
             socket.send(JSON.stringify({ type: 'start_game', sessionId: sessionId, total_rounds: totalRounds }));
         }
-
-        // Function to update the round display
+    
         function updateRoundDisplay(round) {
             const roundDisplay = document.getElementById('round-display');
             roundDisplay.textContent = `Round ${round}`;
         }
-
-        // Function to start the round
+    
         function startRound(role, script, name, round) {
             document.getElementById('game').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
             document.getElementById('team-display').textContent = `You are ${role}`;
             updateRoundDisplay(round); // Display round number
             document.getElementById('name').textContent = name;
-
+    
             currentScript = script;
             currentLine = 0;
-
+    
             if (role === 'Person 1' || role === 'Person 2' || role === 'Person 3') {
                 document.getElementById('dialogue').style.display = 'block';
                 document.getElementById('next-button').style.display = 'block';
@@ -175,30 +169,30 @@
                 document.getElementById('guess').style.display = 'block';
                 createGuessButtons();
             }
-
+    
             // Always show leaderboard
             document.getElementById('leaderboard').style.display = 'block';
         }
-
+    
         function showNextLine(role) {
             const line = currentScript.dialogue[currentLine];
-            
+    
             if (role === line.speaker) {
                 document.getElementById('dialogue-text').textContent = line.text;
             } else {
                 document.getElementById('dialogue-text').textContent = 'Waiting for next line...';
             }
-
+    
             currentLine++;
             if (currentLine >= currentScript.dialogue.length) {
                 document.getElementById('next-button').style.display = 'none';
             }
         }
-
+    
         function nextLine() {
             showNextLine(document.getElementById('team-display').textContent.split(' ')[2]); // Get current role
         }
-
+    
         function createGuessButtons() {
             const guessButtons = document.getElementById('guess-buttons');
             guessButtons.innerHTML = '';
@@ -211,7 +205,7 @@
                 }
             }
         }
-
+    
         function submitGuess(person) {
             socket.send(JSON.stringify({
                 type: 'submit_guess',
@@ -221,8 +215,7 @@
                 adlibber: Object.keys(playerRoles).find(name => playerRoles[name] === 'Person 1')
             }));
         }
-
-        // Function to update the leaderboard on UI
+    
         function updateLeaderboard(leaderboard) {
             const leaderboardList = document.getElementById('leaderboard-list');
             leaderboardList.innerHTML = '';
@@ -232,8 +225,7 @@
                 leaderboardList.appendChild(li);
             }
         }
-
-        // Function to handle end of game
+    
         function endGame(leaderboard) {
             const leaderboardList = document.getElementById('leaderboard-list');
             leaderboardList.innerHTML = '';
@@ -244,6 +236,6 @@
             }
             alert('Game Over! Final Scores: ' + JSON.stringify(leaderboard));
         }
-    </script>
+    </script>    
 </body>
 </html>
